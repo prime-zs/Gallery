@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Gallery</string>
+    <string name="storage_permission">Storage Permission</string>
+    <string name="storage_permission_msg">Hello there! To ensure that our app works smoothly, we need your permission to access your device\'s storage. Can you please grant us permission to read storage?</string>
+</resources>
