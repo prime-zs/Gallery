@@ -1,10 +1,12 @@
 package com.prime.gallery.core.compose
 
 import androidx.annotation.FloatRange
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.*
@@ -76,4 +78,14 @@ private val CompactMeasurePolicy =
                 width / 2 - progressPlaceable.width / 2, height - progressPlaceable.height
             )
         }
+    }
+
+
+/**
+ * The content padding for the screen under current [NavGraph]
+ */
+@Deprecated("Not required. Pass directly.")
+val LocalWindowPadding =
+    compositionLocalOf {
+        PaddingValues(0.dp)
     }

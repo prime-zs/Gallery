@@ -30,6 +30,8 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.prime.gallery.core.ContentElevation
 import com.prime.gallery.core.ContentPadding
 import com.prime.gallery.core.compose.Scaffold2
+import com.prime.gallery.directory.store.Photos
+import com.prime.gallery.directory.store.PhotosViewModel
 import com.primex.core.SignalWhite
 import com.primex.core.TrafficBlack
 import com.primex.core.blend
@@ -127,10 +129,14 @@ private fun NavigationBar(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Home() {
     Scaffold2(navBar = { NavigationBar() }) {
-        Box(modifier = Modifier.padding()){
-        }
+        val controller =  rememberAnimatedNavController()
+       CompositionLocalProvider(LocalNavController provides controller) {
+           val viewModel = hiltViewModel<PhotosViewModel>()
+           Photos(viewModel = viewModel)
+       }
     }
 }
