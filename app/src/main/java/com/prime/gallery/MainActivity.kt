@@ -360,7 +360,7 @@ class MainActivity : ComponentActivity(), Provider {
         duration: Duration
     ) {
         lifecycleScope.launch {
-            toastHostState.show(title, text, action, icon, accent, duration)
+            toastHostState.show(text, title, action, icon, accent, duration)
         }
     }
 
@@ -373,7 +373,7 @@ class MainActivity : ComponentActivity(), Provider {
         duration: Duration
     ) {
         lifecycleScope.launch {
-            toastHostState.show(title, text, action, icon, accent, duration)
+            toastHostState.show(text, title, action, icon, accent, duration)
         }
     }
 

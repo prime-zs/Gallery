@@ -175,13 +175,15 @@ private fun <T : Any> Toolbar(
             IconButton(
                 // remove focus else navigateUp
                 onClick = {
-                    if (resolver.focused.isNotBlank())
+                   /* if (resolver.focused.isNotBlank())
                         resolver.focused = ""
                     else
-                        navigator.navigateUp()
+                        navigator.navigateUp()*/
                 },
                 imageVector = Icons.Outlined.ReplyAll,
-                contentDescription = null
+                contentDescription = null,
+                tint = Color.Transparent,
+                enabled = false
             )
         },
         // paint the main actions in the toolbar
@@ -428,11 +430,11 @@ private fun Header(
             // in case the length of the title string is 1
             true -> Header(
                 text = title,
-                style = Material.typography.h3,
-                fontWeight = FontWeight.Normal,
+                style = Material.typography.h2,
+                fontWeight = FontWeight.Bold,
                 color = color,
                 modifier = Modifier
-                    .padding(top = ContentPadding.normal)
+                    .padding(top = ContentPadding.large, bottom = ContentPadding.small)
                     .padding(horizontal = ContentPadding.large),
             )
             // draw a multiline line header
@@ -441,11 +443,11 @@ private fun Header(
                 text = title,
                 color = color,
                 maxLines = 2,
-                fontWeight = FontWeight.Normal,
+                fontWeight = FontWeight.Light,
                 style = Material.typography.h4,
                 modifier = Modifier
                     // don't fill whole line.
-                    .fillMaxWidth(0.7f)
+                    .fillMaxWidth(0.6f)
                     .padding(top = ContentPadding.large, bottom = ContentPadding.medium)
                     .padding(horizontal = ContentPadding.normal)
             )
@@ -505,7 +507,7 @@ private fun <T : Any> Metadata(
                 .constrainAs(Artwork) {
                     start.linkTo(parent.start, ContentPadding.normal)
                     width = Dimension.value(76.dp)
-                    height = Dimension.ratio("0.61")
+                    height = Dimension.ratio("0.51")
                 }
         )
 

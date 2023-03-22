@@ -2,6 +2,8 @@ package com.prime.gallery.core.compose
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.primex.core.Text
 
 /**
@@ -27,3 +29,9 @@ fun composableOrNull(condition: Boolean, content: @Composable () -> Unit) =
         true -> content
         else -> null
     }
+
+/**
+ * Returns the current route of the [NavHostController]
+ */
+val NavHostController.current
+    @Composable inline get() = currentBackStackEntryAsState().value?.destination?.route
