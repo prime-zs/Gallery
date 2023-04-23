@@ -567,7 +567,7 @@ class MainActivity : ComponentActivity(), Provider {
                         ) { has ->
                             when (has) {
                                 false -> PermissionRationale { permission.launchPermissionRequest() }
-                                else -> Home()
+                                else -> Home(toastHostState)
                             }
                         }
                     }

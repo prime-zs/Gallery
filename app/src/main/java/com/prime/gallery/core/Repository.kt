@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.annotation.WorkerThread
+import com.prime.gallery.core.db.Photo
 import com.prime.gallery.core.db.getPhotos
 import com.prime.gallery.core.db.observe
 import dagger.hilt.android.scopes.ActivityRetainedScoped
@@ -55,5 +56,32 @@ class Repository @Inject constructor(
         offset: Int = 0,
         limit: Int = Int.MAX_VALUE
     ) = resolver.getPhotos(query, order, ascending, offset = offset, limit = limit)
+
+    /**
+     * Returns a list of photos that are contained within the specified folder.
+     *
+     * `Usage Example`
+     * ```
+     * val viewModel = ViewModelProvider(this).get(MyViewModel::class.java)
+     * viewModel.getPhotosFromFolder("/storage/emulated/0/Music/MyPlaylist", query = "love").forEach { photo ->
+     *     Log.d(TAG, "Phtot: ${audio.title}")
+     * }
+     * ```
+     *
+     * @param path The path to the folder to retrieve audios from.
+     * @param query An optional search query to filter the audios.
+     * @param order The order in which to sort the audios. Defaults to sorting by title.
+     * @param ascending A Boolean indicating whether to sort the audios in ascending order. Defaults to true.
+     *
+     * @return A list of audios contained within the specified folder and matching the specified query and order.
+     *
+     * @throws SecurityException if the app doesn't have permission to access the audio content provider.
+     */
+    suspend fun getPhotosOfFolder(
+        path: String,
+        query: String? = null,
+        order: String = MediaStore.Images.Media.DATE_MODIFIED,
+        ascending: Boolean = true,
+    ): List<Photo> = TODO("Not Implemented yet!!")
 
 }

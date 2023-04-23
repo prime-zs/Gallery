@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -28,6 +29,7 @@ import com.prime.gallery.core.Repository
 import com.prime.gallery.core.compose.ToastHostState
 import com.prime.gallery.core.compose.show
 import com.prime.gallery.core.db.Photo
+import com.prime.gallery.core.util.DateUtil
 import com.prime.gallery.core.util.FileUtils
 import com.prime.gallery.directory.*
 import com.prime.gallery.overlay
@@ -46,6 +48,9 @@ private val Photo.firstTitleChar
     inline get() = title.uppercase()[0].toString()
 
 typealias Photos = PhotosViewModel.Companion
+
+private inline fun MetaData(builder: (AnnotatedString.Builder).() -> Unit) =
+    MetaData(title = Text(buildAnnotatedString(builder)))
 
 @HiltViewModel
 class PhotosViewModel @Inject constructor(
@@ -75,14 +80,14 @@ class PhotosViewModel @Inject constructor(
             key: String = NULL_STRING,
             query: String = NULL_STRING,
             order: String = NULL_STRING,
-            ascending: Boolean = true,
+            ascending: Boolean = false,
             viewType: ViewType? = null
         ) = compose("$HOST/$of", Uri.encode(key), query, order, ascending, viewType)
     }
 
     override fun map(id: String): GroupBy {
         return when (id) {
-            NULL_STRING -> GroupBy.Name
+            NULL_STRING -> GroupBy.DateModified
             else -> GroupBy.map(id)
         }
     }
@@ -96,7 +101,6 @@ class PhotosViewModel @Inject constructor(
 
     private val type: String = handle.get<String>(PARAM_TYPE) ?: GET_EVERY
 
-
     override fun toggleViewType() {
         // we only currently support single viewType. Maybe in future might support more.
         viewModelScope.launch {
@@ -105,46 +109,42 @@ class PhotosViewModel @Inject constructor(
     }
 
     override val actions: List<Action> =
-        mutableStateListOf(
-            Action.Delete,
-            Action.Share,
-            Action.Properties,
-        )
-
-    init {
-        meta = MetaData(
-            Text(
-                buildAnnotatedString {
-                    append(
-                        when (type) {
-                            GET_EVERY -> "Photos"
-                            GET_FROM_FOLDER -> "Folder"
-                            else -> error("no such photo type $type.")
-                        }
-                    )
-                    withStyle(SpanStyle(fontSize = 9.sp)) {
-                        // new line
-                        append("\n")
-                        // name of the album.
-                        append(
-                            when (type) {
-                                GET_EVERY -> "All Local Audio Files"
-                                GET_FROM_FOLDER -> FileUtils.name(key)
-                                else -> key
-                            }
-                        )
-                    }
-
-                }
-            )
-        )
-    }
-
+        mutableStateListOf(Action.Delete, Action.Share, Action.Properties)
     override val orders: List<GroupBy> =
         listOf(GroupBy.None, GroupBy.Name, GroupBy.DateAdded, GroupBy.DateModified, GroupBy.Folder)
     override val mActions: List<Action?> =
-        listOf(null, Action("slide_show", "Slide Show", Icons.Default.Slideshow))
+        emptyList()
 
+
+    // After first initialization
+    init {
+        // emit ascending by default
+        filter(ascending = false)
+        meta = MetaData {
+            //Title
+            append(
+                when (type) {
+                    GET_EVERY -> "Photos"
+                    GET_FROM_FOLDER -> "Folder"
+                    else -> error("no such photo type $type.")
+                }
+            )
+
+            //Subtitle
+            withStyle(SpanStyle(fontSize = 9.sp)) {
+                // new line
+                append("\n")
+                // name of the album.
+                append(
+                    when (type) {
+                        GET_EVERY -> "All Local Audio Files"
+                        GET_FROM_FOLDER -> FileUtils.name(key)
+                        else -> key
+                    }
+                )
+            }
+        }
+    }
 
     /**
      * Retrieves a list of audio sources based on the specified query, order, and sort order.
@@ -157,11 +157,11 @@ class PhotosViewModel @Inject constructor(
     private suspend fun source(query: String?, order: String, ascending: Boolean) =
         when (type) {
             GET_EVERY -> repository.getPhotos(query, order, ascending)
-            GET_FROM_FOLDER -> TODO("Not Implemented yet!")
+            GET_FROM_FOLDER -> repository.getPhotosOfFolder(key, query, order, ascending)
             else -> error("invalid type $type")
         }
 
-    inline val GroupBy.toMediaOrder
+    private inline val GroupBy.toMediaOrder
         get() = when (this) {
             GroupBy.DateAdded -> MediaStore.Audio.Media.DATE_ADDED
             GroupBy.DateModified -> MediaStore.Audio.Media.DATE_MODIFIED
@@ -170,7 +170,6 @@ class PhotosViewModel @Inject constructor(
             else -> error("$this order not supported.")
         }
 
-
     override val data: Flow<Mapped<Photo>> =
         repository.observe(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             .combine(filter) { f1, f2 -> f2 }
@@ -178,18 +177,10 @@ class PhotosViewModel @Inject constructor(
                 val (order, query, ascending) = it
                 val list = source(query, order.toMediaOrder, ascending)
 
-                // Don't know if this is correct place to emit changes to Meta.
-                val latest = list.maxByOrNull { it.dateModified }
-                meta = meta?.copy(
-                    artwork = latest?.let { "file://${it.data}" },
-                    cardinality = list.size,
-                    dateModified = latest?.dateModified ?: -1
-                )
-
                 when (order) {
-                    GroupBy.DateAdded -> TODO()
-                    GroupBy.DateModified -> TODO()
-                    GroupBy.Folder -> TODO()
+                    GroupBy.DateAdded -> list.groupBy { photo -> Text(DateUtil.formatAsRelativeTimeSpan(photo.dateAdded)) }
+                    GroupBy.DateModified -> list.groupBy { photo -> Text(DateUtil.formatAsRelativeTimeSpan(photo.dateModified)) }
+                    GroupBy.Folder -> list.groupBy { photo -> Text(FileUtils.parent(photo.data)) }
                     GroupBy.Name -> list.groupBy { audio -> Text(audio.firstTitleChar) }
                     GroupBy.None -> mapOf(Text("") to list)
                     else -> error("$order invalid")
