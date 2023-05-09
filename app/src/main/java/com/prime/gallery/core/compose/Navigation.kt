@@ -2,6 +2,7 @@ package com.prime.gallery.core.compose
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -10,10 +11,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.navigation.NavGraph
@@ -26,7 +33,7 @@ import com.primex.core.*
 import com.primex.material2.Label
 import kotlin.math.roundToInt
 
-private val NAV_BAR_DEFAULT_HEIGHT = 58.dp
+private val NAV_BAR_COMPACT_HEIGHT = 58.dp
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -65,7 +72,6 @@ fun NavTab(
     )
 }
 
-
 @Composable
 @NonRestartableComposable
 private fun NavigationBar(
@@ -75,7 +81,7 @@ private fun NavigationBar(
     Surface(
         modifier = modifier
             .padding(ContentPadding.normal)
-            .height(NAV_BAR_DEFAULT_HEIGHT)
+            .height(NAV_BAR_COMPACT_HEIGHT)
             .fillMaxWidth()
             .scale(0.85f),
         elevation = ContentElevation.xHigh,
@@ -119,52 +125,6 @@ val LocalWindowPadding =
         PaddingValues(0.dp)
     }
 
-/**
- * This composable function houses the logic to show [Toast]s, animate a [NavigationBar], and display update progress.
- *
- * @param content the main content of the screen to be displayed
- * @param modifier optional [Modifier] to be applied to the composable
- * @param toast optional [ToastHostState] object to handle [Toast] messages to be displayed
- * @param progress optional progress value to show a linear progress bar. Pass [Float.NaN] to hide the progress bar,
- *        -1 to show an indeterminate progress bar, or a value between 0 and 1 to show a determinate progress bar.
- * @param navBar optional [Composable] function to display a navigation bar or toolbar
- */
-@Composable
-fun Navigation(
-    content: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    toast: ToastHostState = remember(::ToastHostState),
-    @FloatRange(0.0, 1.0) progress: Float = Float.NaN,
-    tabs: @Composable RowScope.() -> Unit,
-) {
-    Layout(
-        modifier = modifier.fillMaxSize(),
-        measurePolicy = CompactMeasurePolicy,
-        content = {
-            val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
-            val windowPadding =
-                NAV_BAR_DEFAULT_HEIGHT + navBarPadding.calculateBottomPadding() + 2 * ContentPadding.normal
-            CompositionLocalProvider(LocalWindowPadding provides PaddingValues(bottom = windowPadding)) {
-                content()
-            }
-            // then place the toast host
-            ToastHost(state = toast)
-            // The navigationBar
-            // handle the logic for
-            NavigationBar(modifier = Modifier.padding(navBarPadding)) {
-                tabs()
-            }
-            // don't draw progressBar.
-            when {
-                // special value indicating that the progress is about to start.
-                progress == -1f -> LinearProgressIndicator()
-                // draw the progress bar at the bottom of the screen when is not a NAN.
-                !progress.isNaN() -> LinearProgressIndicator(progress = progress)
-            }
-        }
-    )
-}
-
 private val CompactMeasurePolicy =
     MeasurePolicy { measurables, constraints ->
         val width = constraints.maxWidth
@@ -200,3 +160,81 @@ private val CompactMeasurePolicy =
         }
     }
 
+
+/**
+ * This composable function is responsible for displaying the main content of the screen along with additional features
+ * such as [Toast] messages, animated [NavigationBar], and app update progress indicator.
+ *
+ * @param content the main content of the screen to be displayed
+ * @param modifier optional [Modifier] to be applied to the composable
+ * @param toast optional [ToastHostState] object to handle [Toast] messages to be displayed
+ * @param progress optional progress value to show a linear progress bar. Pass [Float.NaN] to hide the progress bar,
+ *        -1 to show an indeterminate progress bar, or a value between 0 and 1 to show a determinate progress bar.
+ * @param tabs optional [Composable] function to display a navigation bar or toolbar
+ * @param hide optional value to force hide the bottom navigation bar.
+ */
+@Composable
+// this currently represents the compact width nav bar
+fun Navigation(
+    content: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    hide: Boolean = false,
+    toast: ToastHostState = remember(::ToastHostState),
+    @FloatRange(0.0, 1.0) progress: Float = Float.NaN,
+    tabs: @Composable () -> Unit,
+) {
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
+    val orgBottomBarHeight = NAV_BAR_COMPACT_HEIGHT +
+            navBarPadding.calculateBottomPadding()+
+            2 * ContentPadding.normal
+    val orgBottomBarHeightPx = with(LocalDensity.current){orgBottomBarHeight.toPx()}
+
+    val currHeight = remember {
+        mutableStateOf(0f)
+    }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                val delta = available.y
+                val newOffset = currHeight.value + delta
+                currHeight.value =
+                    newOffset.coerceIn(0f, orgBottomBarHeightPx)
+                return Offset.Zero
+            }
+        }
+    }
+
+    Layout(
+        modifier = modifier.nestedScroll(nestedScrollConnection).fillMaxSize(),
+        measurePolicy = CompactMeasurePolicy,
+        content = {
+            CompositionLocalProvider(LocalWindowPadding provides PaddingValues(bottom = orgBottomBarHeight)) {
+                content()
+            }
+            // then place the toast host
+            ToastHost(state = toast)
+            // The navigationBar
+            // handle the logic for
+            NavigationBar(modifier = Modifier
+                .padding(navBarPadding)
+                .offset{
+                    IntOffset(0, if (hide) orgBottomBarHeightPx.roundToInt() else currHeight.value.toInt())
+                }
+
+            ) {
+                tabs()
+            }
+            // don't draw progressBar.
+            when {
+                // special value indicating that the progress is about to start.
+                progress == -1f -> LinearProgressIndicator()
+                // draw the progress bar at the bottom of the screen when is not a NAN.
+                !progress.isNaN() -> LinearProgressIndicator(progress = progress)
+            }
+        }
+    )
+}

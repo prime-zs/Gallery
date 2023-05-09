@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.compose.runtime.Stable
-import com.primex.core.runCatching
+import com.prime.gallery.core.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -150,7 +150,7 @@ private val Cursor.toPhoto: Photo
             data = path,
             dateTaken = getLong(11) * 1000,
             longitude = 0.0f,
-            latitude =  0.0f
+            latitude = 0.0f
         )
     }
 
@@ -158,7 +158,7 @@ private val Cursor.toPhoto: Photo
  * @return [Audio]s from the [MediaStore].
  */
 //@RequiresPermission(anyOf = [READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE])
-suspend fun ContentResolver.getPhotos(
+suspend fun ContentResolver.getImages(
     filter: String? = null,
     order: String = MediaStore.Images.Media.DEFAULT_SORT_ORDER,
     ascending: Boolean = true,
@@ -213,3 +213,114 @@ fun ContentResolver.observe(uri: Uri) = callbackFlow {
         unregisterContentObserver(observer)
     }
 }
+
+private suspend inline fun ContentResolver.getImagesOfFolder(
+    selection: String,
+    args: Array<String>,
+    order: String = MediaStore.Images.Media.TITLE,
+    ascending: Boolean = true,
+    offset: Int = 0,
+    limit: Int = Int.MAX_VALUE
+): List<Photo> {
+    return query2(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection = PHOTO_PROJECTION,
+        selection = selection,
+        args,
+        order,
+        ascending,
+        offset,
+        limit,
+        transform = { c ->
+            List(c.count) {
+                c.moveToPosition(it);
+                c.toPhoto
+            }
+        },
+    ) ?: emptyList()
+}
+
+
+suspend fun ContentResolver.getImagesOfFolder(
+    path: String,
+    filter: String? = null,
+    order: String = MediaStore.Images.Media.TITLE,
+    ascending: Boolean = true,
+    offset: Int = 0,
+    limit: Int = Int.MAX_VALUE
+): List<Photo> {
+    val like = if (filter != null) " AND ${MediaStore.Images.Media.TITLE} LIKE ?" else ""
+    val selection = "${MediaStore.Images.Media.DATA} LIKE ?" + like
+    val args = if (filter != null) arrayOf("$path%", "%$filter%") else arrayOf("$path%")
+    return getImagesOfFolder(selection, args, order, ascending, offset, limit)
+}
+
+
+@Stable
+class Folder(
+    @JvmField val artwork: String,
+    @JvmField val path: String,
+    @JvmField val cardinality: Int,
+    @JvmField val size: Int
+)
+
+val Folder.name: String
+    get() = FileUtils.name(path)
+
+suspend fun ContentResolver.getFolders(
+    filter: String? = null, ascending: Boolean = true, offset: Int = 0, limit: Int = Int.MAX_VALUE
+): List<Folder> {
+    return query2(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        arrayOf(MediaStore.Images.Media.DATA),
+        selection = if (filter == null) DUMMY_SELECTION else "${MediaStore.Images.Media.DATA} LIKE ?",
+        if (filter != null) arrayOf("%$filter%") else null,
+        order = MediaStore.Images.Media.DATE_MODIFIED,
+        ascending = ascending
+    ) { c ->
+        val result = List(c.count) {
+            c.moveToPosition(it);
+            val path = c.getString(0)
+            // filter out the individual folders of camera directory.
+            // use
+            val parent = FileUtils.parent(path).let {
+                if (FileUtils.name(it).startsWith("img", true))
+                    FileUtils.parent(it)
+                else
+                    it
+            }
+            Folder(path, parent, 0, 0)
+        }.distinctBy { it.path }
+        // Fix. TODO: return limit to make consistent with others.
+        // val fromIndex = if (offset > l.size - 1) l.size -1 else offset
+        // val toIndex = if (offset + limit > l.size -1 ) TODO()
+        result
+    } ?: emptyList()
+}
+
+private suspend inline fun ContentResolver.getPhotosOfFolder(
+    selection: String,
+    args: Array<String>,
+    order: String = MediaStore.Images.Media.TITLE,
+    ascending: Boolean = true,
+    offset: Int = 0,
+    limit: Int = Int.MAX_VALUE
+): List<Photo> {
+    return query2(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection = PHOTO_PROJECTION,
+        selection = selection,
+        args,
+        order,
+        ascending,
+        offset,
+        limit,
+        transform = { c ->
+            List(c.count) {
+                c.moveToPosition(it);
+                c.toPhoto
+            }
+        },
+    ) ?: emptyList()
+}
+

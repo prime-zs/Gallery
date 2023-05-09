@@ -143,7 +143,7 @@ val Colors.lightShadowColor
 val Colors.darkShadowColor
     @Composable inline get() = if (isLight) Color(0xFFAEAEC0).copy(0.7f) else Color.Black.copy(0.6f)
 
-private val LightPrimaryColor = Color.SkyBlue
+private val LightPrimaryColor = Color(0xFF07648C)
 private val LightSecondaryColor = Color.Rose
 
 private val DarkPrimaryColor = Color.Amber

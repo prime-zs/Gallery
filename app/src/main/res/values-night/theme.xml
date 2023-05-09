@@ -10,12 +10,13 @@
 
     <style name="Theme.Splash" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/Theme.Gallery</item>
-        <item name="windowSplashScreenBackground">#0E0E0E</item>
-      <!--  <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>-->
+        <item name="windowSplashScreenBackground">#000000</item>
         <item name="android:windowFullscreen">true</item>
-        <!-- <item name="windowSplashScreenBrandingImage">@drawable/ic_angle</item>-->
+        <item name="android:windowSplashScreenBrandingImage" tools:ignore="NewApi">
+            @drawable/logo_dark
+        </item>
+        <!--  <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>-->
         <!--  <item name="windowSplashScreenAnimationDuration">1000</item>-->
         <!-- <item name="windowSplashScreenIconBackgroundColor">#34FFFFFF</item>-->
     </style>
-
 </resources>

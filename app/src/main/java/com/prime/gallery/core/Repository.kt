@@ -1,19 +1,15 @@
 package com.prime.gallery.core
 
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.annotation.WorkerThread
 import com.prime.gallery.core.db.Photo
-import com.prime.gallery.core.db.getPhotos
+import com.prime.gallery.core.db.getFolders
+import com.prime.gallery.core.db.getImages
+import com.prime.gallery.core.db.getImagesOfFolder
 import com.prime.gallery.core.db.observe
 import dagger.hilt.android.scopes.ActivityRetainedScoped
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 /**
@@ -49,13 +45,38 @@ class Repository @Inject constructor(
      */
     fun observe(uri: Uri) = resolver.observe(uri)
 
-    suspend fun getPhotos(
+    suspend fun getImages(
         query: String? = null,
         order: String = MediaStore.Audio.Media.TITLE,
         ascending: Boolean = true,
         offset: Int = 0,
         limit: Int = Int.MAX_VALUE
-    ) = resolver.getPhotos(query, order, ascending, offset = offset, limit = limit)
+    ) = resolver.getImages(query, order, ascending, offset = offset, limit = limit)
+
+
+    /**
+     * Returns a list of [Folder]s that match the given [filter], ordered in either ascending or
+     * descending order based on the [ascending] parameter.
+     *
+     * @param filter A string to filter the folders by, or null if no filtering is desired (default: null).
+     * @param ascending A boolean indicating whether to sort the folders in ascending (true)
+     * or descending (false) order (default: true).
+     *
+     * Usage Example:
+     * ```
+     * val folders: List<Folder> = getFolders("My Music", false)
+     * ```
+     *
+     * @return A list of [Folder]s that match the given [filter], ordered in either ascending or
+     * descending order based on the [ascending] parameter.
+     *
+     * @throws SecurityException If the app does not have permission to access the audio files.
+     * @throws IllegalStateException If the [MediaResolver] is not initialized.
+     */
+    suspend fun getFolders(
+        filter: String? = null,
+        ascending: Boolean = true,
+    ) = resolver.getFolders(filter, ascending)
 
     /**
      * Returns a list of photos that are contained within the specified folder.
@@ -64,7 +85,7 @@ class Repository @Inject constructor(
      * ```
      * val viewModel = ViewModelProvider(this).get(MyViewModel::class.java)
      * viewModel.getPhotosFromFolder("/storage/emulated/0/Music/MyPlaylist", query = "love").forEach { photo ->
-     *     Log.d(TAG, "Phtot: ${audio.title}")
+     *     Log.d(TAG, "Photo: ${photo.title}")
      * }
      * ```
      *
@@ -73,15 +94,16 @@ class Repository @Inject constructor(
      * @param order The order in which to sort the audios. Defaults to sorting by title.
      * @param ascending A Boolean indicating whether to sort the audios in ascending order. Defaults to true.
      *
-     * @return A list of audios contained within the specified folder and matching the specified query and order.
+     * @return A list of photos contained within the specified folder and matching the specified query and order.
      *
      * @throws SecurityException if the app doesn't have permission to access the audio content provider.
      */
-    suspend fun getPhotosOfFolder(
+    suspend fun getImagesOfFolder(
         path: String,
-        query: String? = null,
-        order: String = MediaStore.Images.Media.DATE_MODIFIED,
+        filter: String? = null,
+        order: String = MediaStore.Images.Media.TITLE,
         ascending: Boolean = true,
-    ): List<Photo> = TODO("Not Implemented yet!!")
-
+        offset: Int = 0,
+        limit: Int = Int.MAX_VALUE
+    ): List<Photo> = resolver.getImagesOfFolder(path, filter, order, ascending, offset, limit)
 }

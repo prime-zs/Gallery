@@ -78,8 +78,7 @@ private fun Context.shareApp() {
 
 @Composable
 private fun Layout(
-    resolver: SettingsViewModel,
-    modifier: Modifier = Modifier
+    resolver: SettingsViewModel, modifier: Modifier = Modifier
 ) {
     val state = rememberScrollState()
     //val color = if (MaterialTheme.colors.isLight) Color.White else Color.Black
@@ -98,8 +97,7 @@ private fun Layout(
 
         //dark mode
         val darkTheme by resolver.darkUiMode
-        DropDownPreference(
-            title = stringResource(value = darkTheme.title),
+        DropDownPreference(title = stringResource(value = darkTheme.title),
             defaultValue = darkTheme.value,
             icon = darkTheme.vector,
             entries = listOf(
@@ -110,8 +108,7 @@ private fun Layout(
             onRequestChange = {
                 resolver.set(Gallery.NIGHT_MODE, it)
                 provider.showAd(force = true)
-            }
-        )
+            })
 
 
         val purchase by purchase(id = Product.DISABLE_ADS)
@@ -122,42 +119,36 @@ private fun Layout(
 
         //force accent
         val forceAccent by resolver.forceAccent
-        SwitchPreference(
-            checked = forceAccent.value,
+        SwitchPreference(checked = forceAccent.value,
             title = stringResource(value = forceAccent.title),
             summery = stringResource(value = forceAccent.summery),
             onCheckedChange = { should: Boolean ->
                 resolver.set(Gallery.FORCE_COLORIZE, should)
                 if (should) resolver.set(Gallery.COLOR_STATUS_BAR, true)
                 provider.showAd(force = true)
-            }
-        )
+            })
 
         //color status bar
         val colorStatusBar by resolver.colorStatusBar
-        SwitchPreference(
-            checked = colorStatusBar.value,
+        SwitchPreference(checked = colorStatusBar.value,
             title = stringResource(value = colorStatusBar.title),
             summery = stringResource(value = colorStatusBar.summery),
             enabled = !forceAccent.value,
             onCheckedChange = { should: Boolean ->
                 resolver.set(Gallery.COLOR_STATUS_BAR, should)
                 provider.showAd(force = true)
-            }
-        )
+            })
 
 
         //hide status bar
         val hideStatusBar by resolver.hideStatusBar
-        SwitchPreference(
-            checked = hideStatusBar.value,
+        SwitchPreference(checked = hideStatusBar.value,
             title = stringResource(value = hideStatusBar.title),
             summery = stringResource(value = hideStatusBar.summery),
             onCheckedChange = { should: Boolean ->
                 resolver.set(Gallery.HIDE_STATUS_BAR, should)
                 //TODO: Add statusBar Hide/Show logic.
-            }
-        )
+            })
 
         PrefHeader(text = "Feedback")
         val context = LocalContext.current
@@ -219,30 +210,27 @@ private fun Layout(
 fun Settings(
     viewModel: SettingsViewModel
 ) {
-    Scaffold(
+    Scaffold(topBar = {
+        val navigator = LocalNavController.current
+        NeumorphicTopAppBar(
+            title = { Label(text = stringResource(R.string.settings)) },
+            navigationIcon = {
+                IconButton(
+                    onClick = { navigator.navigateUp() },
+                    imageVector = Icons.Outlined.ReplyAll,
+                    contentDescription = null
+                )
+            },
+            shape = CircleShape,
+            lightShadowColor = Material.colors.lightShadowColor,
+            darkShadowColor = Material.colors.darkShadowColor,
+            elevation = ContentElevation.low,
+            modifier = Modifier
+                .statusBarsPadding()
+                .drawHorizontalDivider(color = Material.colors.onSurface)
+                .padding(vertical = ContentPadding.medium),
+        )
+    },
 
-        topBar = {
-            val navigator = LocalNavController.current
-            NeumorphicTopAppBar(
-                title = { Label(text = stringResource(R.string.settings)) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { navigator.navigateUp() },
-                        imageVector = Icons.Outlined.ReplyAll,
-                        contentDescription = null
-                    )
-                },
-                shape = CircleShape,
-                lightShadowColor = Material.colors.lightShadowColor,
-                darkShadowColor = Material.colors.darkShadowColor,
-                elevation = ContentElevation.low,
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .drawHorizontalDivider(color = Material.colors.onSurface)
-                    .padding(vertical = ContentPadding.medium),
-            )
-        },
-
-        content = { Layout(resolver = viewModel, modifier = Modifier.padding(it)) }
-    )
+        content = { Layout(resolver = viewModel, modifier = Modifier.padding(it)) })
 }

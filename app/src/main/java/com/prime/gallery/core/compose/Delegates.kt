@@ -1,7 +1,12 @@
 package com.prime.gallery.core.compose
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.RenderVectorGroup
+import androidx.compose.ui.unit.Dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.primex.core.Text
@@ -35,3 +40,26 @@ fun composableOrNull(condition: Boolean, content: @Composable () -> Unit) =
  */
 val NavHostController.current
     @Composable inline get() = currentBackStackEntryAsState().value?.destination?.route
+
+@Composable
+inline fun rememberVectorPainter(
+    image: ImageVector,
+    defaultWidth: Dp = image.defaultWidth,
+    defaultHeight: Dp = image.defaultHeight,
+    viewportWidth: Float = image.viewportWidth,
+    viewportHeight: Float = image.viewportHeight,
+    name: String = image.name,
+    tintColor: Color = image.tintColor,
+    tintBlendMode: BlendMode = image.tintBlendMode,
+    autoMirror: Boolean = image.autoMirror,
+) = androidx.compose.ui.graphics.vector.rememberVectorPainter(
+    defaultWidth = defaultWidth,
+    defaultHeight = defaultHeight,
+    viewportWidth = viewportWidth,
+    viewportHeight = viewportHeight,
+    name = name,
+    tintColor = tintColor,
+    tintBlendMode = tintBlendMode,
+    autoMirror = autoMirror,
+    content = { _, _ -> RenderVectorGroup(group = image.root) }
+)

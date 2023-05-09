@@ -20,18 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
-context (ViewModel) @Suppress("NOTHING_TO_INLINE")
-@Deprecated("find new solution.")
-private inline fun <T> Flow<T>.asComposeState(initial: T): State<T> {
-    val state = mutableStateOf(initial)
-    onEach { state.value = it }.launchIn(viewModelScope)
-    return state
-}
 
-
-context (Preferences, ViewModel)
-        private fun <T> Flow<T>.asComposeState(): State<T> = asComposeState(runBlocking { first() })
-
+        context (Preferences, ViewModel)
 
 typealias Settings = SettingsViewModel.Companion
 
@@ -52,6 +42,11 @@ class SettingsViewModel @Inject constructor(
         const val route = "settings"
     }
 
+    private fun <T> Flow<T>.asComposeState(): State<T> {
+        val state = mutableStateOf(runBlocking { first() })
+        onEach { state.value = it }.launchIn(viewModelScope)
+        return state
+    }
 
     val darkUiMode = with(preferences) {
         preferences[Gallery.NIGHT_MODE].map {
@@ -64,7 +59,7 @@ class SettingsViewModel @Inject constructor(
         }.asComposeState()
     }
 
-
+    
     val colorStatusBar = with(preferences) {
         preferences[Gallery.COLOR_STATUS_BAR].map {
             Preference(

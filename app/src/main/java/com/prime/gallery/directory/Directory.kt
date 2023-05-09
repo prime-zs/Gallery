@@ -34,13 +34,9 @@ import com.prime.gallery.*
 import com.prime.gallery.R
 import com.prime.gallery.core.ContentElevation
 import com.prime.gallery.core.ContentPadding
-import com.prime.gallery.core.compose.Image
-import com.prime.gallery.core.compose.LocalWindowPadding
-import com.prime.gallery.core.compose.Placeholder
-import com.prime.gallery.core.compose.stringResource
+import com.prime.gallery.core.compose.*
 import com.prime.gallery.core.util.DateUtil
 import com.primex.core.*
-import com.primex.core.stringResource
 import com.primex.material2.*
 import com.primex.material2.neumorphic.NeumorphicTopAppBar
 
@@ -175,15 +171,13 @@ private fun <T : Any> Toolbar(
             IconButton(
                 // remove focus else navigateUp
                 onClick = {
-                   /* if (resolver.focused.isNotBlank())
+                    if (resolver.focused.isNotBlank())
                         resolver.focused = ""
                     else
-                        navigator.navigateUp()*/
+                        navigator.navigateUp()
                 },
                 imageVector = Icons.Outlined.ReplyAll,
-                contentDescription = null,
-                tint = Color.Transparent,
-                enabled = false
+                contentDescription = null
             )
         },
         // paint the main actions in the toolbar
@@ -197,7 +191,7 @@ private fun <T : Any> Toolbar(
                 onClick = { resolver.filter(if (filter.second == null) "" else null) },
                 imageVector = if (filter.second == null) Icons.Outlined.Search else Icons.Outlined.SearchOff,
                 contentDescription = null,
-                enabled = !resolver.isQueryLocked
+                enabled = true
             )
             // viewType
             // toggle between the different viewTypes.
@@ -207,12 +201,12 @@ private fun <T : Any> Toolbar(
                 onClick = { resolver.toggleViewType() },
                 imageVector = viewType.icon,
                 contentDescription = null,
-                enabled = !resolver.isViewTypeLocked
+                enabled = true
             )
 
             // SortBy
             var showOrderMenu by rememberState(initial = false)
-            IconButton(onClick = { showOrderMenu = true }, enabled = !resolver.isOrderLocked) {
+            IconButton(onClick = { showOrderMenu = true }) {
                 Icon(imageVector = Icons.Outlined.Sort, contentDescription = null)
                 val actions = resolver.orders
                 DropdownMenu(
@@ -430,11 +424,11 @@ private fun Header(
             // in case the length of the title string is 1
             true -> Header(
                 text = title,
-                style = Material.typography.h2,
-                fontWeight = FontWeight.Bold,
+                style = Material.typography.h3,
+                fontWeight = FontWeight.Normal,
                 color = color,
                 modifier = Modifier
-                    .padding(top = ContentPadding.large, bottom = ContentPadding.small)
+                    .padding(top = ContentPadding.normal)
                     .padding(horizontal = ContentPadding.large),
             )
             // draw a multiline line header
@@ -443,11 +437,11 @@ private fun Header(
                 text = title,
                 color = color,
                 maxLines = 2,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.Normal,
                 style = Material.typography.h4,
                 modifier = Modifier
                     // don't fill whole line.
-                    .fillMaxWidth(0.6f)
+                    .fillMaxWidth(0.7f)
                     .padding(top = ContentPadding.large, bottom = ContentPadding.medium)
                     .padding(horizontal = ContentPadding.normal)
             )
@@ -507,7 +501,7 @@ private fun <T : Any> Metadata(
                 .constrainAs(Artwork) {
                     start.linkTo(parent.start, ContentPadding.normal)
                     width = Dimension.value(76.dp)
-                    height = Dimension.ratio("0.51")
+                    height = Dimension.ratio("0.61")
                 }
         )
 
@@ -679,13 +673,10 @@ private fun <T : Any> SearchBar(
         label = { Label(text = "Search") },
         shape = Material.shapes.small2,
         trailingIcon = {
-            IconButton(
-                imageVector = Icons.Outlined.Close,
-                onClick = { resolver.filter(if (!query.isNullOrBlank()) "" else null) },
-                enabled = !resolver.isQueryLocked
-            )
+            IconButton(onClick = { resolver.filter(if (!query.isNullOrBlank()) "" else null) }) {
+                Icon(imageVector = Icons.Outlined.Close, contentDescription = null)
+            }
         },
-        enabled = !resolver.isQueryLocked
     )
 }
 
@@ -828,6 +819,7 @@ private fun <T : Any> List(
                     iconResId = R.raw.lt_loading_dots_blue,
                     modifier = Modifier.wrapContentHeight()
                 )
+
                 1 -> Placeholder(
                     title = "Oops Empty!!",
                     iconResId = R.raw.lt_empty_box,

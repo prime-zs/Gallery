@@ -1,5 +1,6 @@
 package com.prime.gallery
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -10,7 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -18,6 +22,8 @@ import com.prime.gallery.core.compose.NavTab
 import com.prime.gallery.core.compose.Navigation
 import com.prime.gallery.core.compose.ToastHostState
 import com.prime.gallery.core.compose.current
+import com.prime.gallery.directory.store.Folders
+import com.prime.gallery.directory.store.FoldersViewModel
 import com.prime.gallery.directory.store.Photos
 import com.prime.gallery.directory.store.PhotosViewModel
 import com.prime.gallery.settings.Settings
@@ -42,40 +48,54 @@ val LocalNavController =
         error("no local nav host controller found")
     }
 
+// Default Enter/Exit Transitions.
 @OptIn(ExperimentalAnimationApi::class)
-private val EnterTransition =
-    scaleIn(initialScale = 0.98f, animationSpec = tween(220, delayMillis = 90)) +
-            fadeIn(animationSpec = tween(700))
+private val EnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    {
+        scaleIn(initialScale = 0.98f, animationSpec = tween(220, delayMillis = 90)) +
+                fadeIn(animationSpec = tween(700))
 
-private val ExitTransition = fadeOut(tween(700))
+    }
+private val ExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    {
+        fadeOut(tween(700))
+    }
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
+@NonRestartableComposable
 private fun NavGraph(
     controller: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Surface(
         modifier = modifier.fillMaxSize(),
         content = {
+            // In order to navigate and remove the need to pass controller below UI components.
+            // pass controller as composition local.
             CompositionLocalProvider(
                 LocalNavController provides controller,
                 content = {
-                    // actual content
+                    // actual paragraph
                     AnimatedNavHost(
                         navController = controller,
-                        startDestination = Photos.route,
-                        enterTransition = { EnterTransition },
-                        exitTransition = { ExitTransition },
+                        startDestination = Folders.route,
+                        enterTransition = EnterTransition,
+                        exitTransition = ExitTransition,
                         builder = {
+                            //Folders
+                            composable(Folders.route) {
+                                val viewModel = hiltViewModel<FoldersViewModel>()
+                                Folders(viewModel = viewModel)
+                            }
 
-                            // unit converter composable
+                            // Folder Explorer.
                             composable(Photos.route) {
                                 val viewModel = hiltViewModel<PhotosViewModel>()
                                 Photos(viewModel = viewModel)
                             }
 
-                            // settings
+                            // Settings
                             composable(Settings.route) {
                                 val viewModel = hiltViewModel<SettingsViewModel>()
                                 Settings(viewModel)
@@ -88,36 +108,65 @@ private fun NavGraph(
     )
 }
 
+private const val TAG = "Home"
 
 // The starting point of the app.
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Home(state: ToastHostState) {
-    val controller = rememberAnimatedNavController()
-    Navigation(
-        content = { NavGraph(controller = controller) },
-        toast = state
-    ) {
-        val current = controller.current
-        val provider = LocalsProvider.current
+    val navController = rememberAnimatedNavController()
+    // TODO: Add logic to hide the nav graph
+    // TODO: Add
+    val currRoute by  navController.currentBackStackEntryAsState()
+    val hide = currRoute?.arguments?.getString(Photos.PARAM_TYPE) == Photos.GET_FROM_FOLDER
 
+    Log.d(TAG, "Home: ${hide}")
+    Navigation(
+        content = { NavGraph(controller = navController) },
+        toast = state,
+        hide = hide
+    ) {
+        val current = navController.current
+        val provider = LocalsProvider.current
         // Photos
         NavTab(
             title = "Photos",
             icon = Icons.Outlined.Image,
             checked = current == Photos.route
         ) {
-            controller.navigate(Photos.direction(Photos.GET_EVERY))
+            navController.navigate(Photos.direction(Photos.GET_EVERY)) {
+                // Pop up to the start destination of the graph to
+                // avoid building up a large stack of destinations
+                // on the back stack as users select items
+              /*  popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }*/
+                // Avoid multiple copies of the same destination when
+                // reselecting the same item
+                launchSingleTop = true
+                // Restore state when reselecting a previously selected item
+                restoreState = true
+            }
         }
 
         // Folders
         NavTab(
             title = "Folders",
             icon = Icons.Outlined.Folder,
-            checked = false
+            checked = current == Folders.route
         ) {
-            controller.navigate(Photos.direction(Photos.GET_EVERY)) {
+            navController.navigate(Folders.direction()) {
+                // Pop up to the start destination of the graph to
+                // avoid building up a large stack of destinations
+                // on the back stack as users select items
+              /*  popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }*/
+                // Avoid multiple copies of the same destination when
+                // re-selecting the same item
                 launchSingleTop = true
+                // Restore state when re-selecting a previously selected item
+                restoreState = true
             }
         }
 
@@ -134,13 +183,24 @@ fun Home(state: ToastHostState) {
             )
         }
 
+        //Settings screen
         NavTab(
             title = "Settings",
             icon = Icons.Outlined.Tune,
             checked = current == Settings.route
         ) {
-            controller.navigate(Settings.route) {
+            navController.navigate(Settings.route) {
+                // Pop up to the start destination of the graph to
+                // avoid building up a large stack of destinations
+                // on the back stack as users select items
+              /*  popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }*/
+                // Avoid multiple copies of the same destination when
+                // reselecting the same item
                 launchSingleTop = true
+                // Restore state when reselecting a previously selected item
+                restoreState = true
             }
         }
     }

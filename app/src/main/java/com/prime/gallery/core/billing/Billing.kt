@@ -393,7 +393,7 @@ operator fun BillingManager.get(id: String) = purchases.value.find { it.products
 @Composable
 @NonRestartableComposable
 fun BillingManager.observeAsState(id: String) =
-    produceState(initialValue = this@BillingManager[id], key1 = purchases, EmptyCoroutineContext) {
+    produceState(initialValue = this[id], key1 = purchases, EmptyCoroutineContext) {
         purchases.map { it.find { it.products.contains(id) } }.collect {
             value = it
         }
