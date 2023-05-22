@@ -1,7 +1,6 @@
 package com.prime.gallery.core
 
 import androidx.compose.animation.core.AnimationConstants
-import androidx.compose.material.ContentAlpha
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -115,12 +114,6 @@ object ContentElevation {
      */
     val xHigh = 30.dp
 }
-
-/**
- * The recommended divider alpha value.
- */
-val ContentAlpha.Divider
-    get() = com.prime.gallery.core.Divider
 
 /**
  * The default alpha value of a divider is 0.12f.

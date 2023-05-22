@@ -2,7 +2,7 @@ buildscript {
     // Some Global Constants.
     ext {
         kotlin_version = '1.8.21'
-        hilt_version = '2.46'
+        hilt_version = '2.46.1'
     }
 
     // Required Plugin Dependencies.
@@ -32,3 +32,4 @@ allprojects {
         }
     }
 }
+

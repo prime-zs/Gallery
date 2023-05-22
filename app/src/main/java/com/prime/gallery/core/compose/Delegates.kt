@@ -1,65 +1,58 @@
 package com.prime.gallery.core.compose
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.RenderVectorGroup
-import androidx.compose.ui.unit.Dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import com.primex.core.Text
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+
 
 /**
- * Returns a string resource if the Text value is not null.
- *
- * @param value The Text value to be used to retrieve the string resource.
- * @return The string resource if the Text value is not null, otherwise null.
+ * A simple `[IconButton] composable that takes [painter] as content instead of content composable.
+ * @see IconButton
  */
 @Composable
-inline fun stringResource(value: Text?) =
-    if (value == null) null else com.primex.core.stringResource(value = value)
-
-
-/**
- * Returns a Composable function if the condition is true, otherwise returns null.
- *
- * @param condition The boolean condition that determines if the composable function should be returned.
- * @param content The composable function to be returned if the condition is true.
- * @return The composable function if the condition is true, otherwise null.
- */
-fun composableOrNull(condition: Boolean, content: @Composable () -> Unit) =
-    when (condition) {
-        true -> content
-        else -> null
+inline fun IconButton(
+    icon: Painter,
+    contentDescription: String?,
+    noinline onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    IconButton(
+        onClick = onClick,
+        modifier,
+        enabled,
+        colors,
+        interactionSource
+    ) {
+        Icon(painter = icon, contentDescription = contentDescription)
     }
+}
 
 /**
- * Returns the current route of the [NavHostController]
+ * @see IconButton
  */
-val NavHostController.current
-    @Composable inline get() = currentBackStackEntryAsState().value?.destination?.route
-
 @Composable
-inline fun rememberVectorPainter(
-    image: ImageVector,
-    defaultWidth: Dp = image.defaultWidth,
-    defaultHeight: Dp = image.defaultHeight,
-    viewportWidth: Float = image.viewportWidth,
-    viewportHeight: Float = image.viewportHeight,
-    name: String = image.name,
-    tintColor: Color = image.tintColor,
-    tintBlendMode: BlendMode = image.tintBlendMode,
-    autoMirror: Boolean = image.autoMirror,
-) = androidx.compose.ui.graphics.vector.rememberVectorPainter(
-    defaultWidth = defaultWidth,
-    defaultHeight = defaultHeight,
-    viewportWidth = viewportWidth,
-    viewportHeight = viewportHeight,
-    name = name,
-    tintColor = tintColor,
-    tintBlendMode = tintBlendMode,
-    autoMirror = autoMirror,
-    content = { _, _ -> RenderVectorGroup(group = image.root) }
-)
+inline fun IconButton(
+    icon: ImageVector,
+    contentDescription: String?,
+    noinline onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+){
+    IconButton(rememberVectorPainter(image = icon), contentDescription, onClick, modifier, enabled, colors, interactionSource)
+}
+
