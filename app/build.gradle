@@ -79,10 +79,15 @@ dependencies {
     def compose_version = '1.5.0-alpha04'
     implementation "androidx.compose.ui:ui:$compose_version"
     //implementation "androidx.compose.material:material:$compose_version"
-    implementation 'androidx.compose.material3:material3:1.2.0-alpha01'
+
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     implementation "androidx.compose.animation:animation-graphics:$compose_version"
+
+    //Material 3
+    def material3_version = '1.2.0-alpha01'
+    implementation "androidx.compose.material3:material3:$material3_version"
+    implementation "androidx.compose.material3:material3-window-size-class:$material3_version"
 
     // Integration with activities
     implementation 'androidx.activity:activity-compose:1.7.1'
@@ -90,7 +95,6 @@ dependencies {
     // Material design icons
     implementation "androidx.compose.material:material-icons-core:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
-
 
     //constraint layout
     implementation 'androidx.constraintlayout:constraintlayout-compose:1.0.1'
@@ -103,16 +107,22 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
     // room data base
-    def room_version = '2.5.1'
-    implementation("androidx.room:room-runtime:$room_version")
-    kapt "androidx.room:room-compiler:$room_version"
-    implementation("androidx.room:room-ktx:$room_version")
+    //def room_version = '2.5.1'
+    //implementation("androidx.room:room-runtime:$room_version")
+    //kapt "androidx.room:room-compiler:$room_version"
+    //implementation("androidx.room:room-ktx:$room_version")
 
     // The Accompanist Libraries
     def accompanist_version = '0.31.2-alpha'
     implementation "com.google.accompanist:accompanist-navigation-animation:$accompanist_version"
-    implementation('io.coil-kt:coil-compose:2.3.0')
     implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
+
+    //Coil
+    def coil_version = "2.4.0"
+    implementation("io.coil-kt:coil-compose:$coil_version")
+    implementation("io.coil-kt:coil-gif:$coil_version")
+    implementation("io.coil-kt:coil-svg:$coil_version")
+    implementation("io.coil-kt:coil-video:$coil_version")
 
     //hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
@@ -125,8 +135,8 @@ dependencies {
 
     //Preferences and other widgets
     def toolkit_version = 'v1.0.0-alpha05'
-    implementation ("com.github.prime-zs.toolkit:preferences:$toolkit_version")
-    implementation ("com.github.prime-zs.toolkit:core-ktx:$toolkit_version")
+    implementation("com.github.prime-zs.toolkit:preferences:$toolkit_version")
+    implementation("com.github.prime-zs.toolkit:core-ktx:$toolkit_version")
 
     // Splash Screen API
     implementation 'androidx.core:core-splashscreen:1.0.1'
