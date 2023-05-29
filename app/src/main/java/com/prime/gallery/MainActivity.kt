@@ -14,7 +14,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -167,6 +172,26 @@ interface Provider {
  */
 val LocalsProvider = staticCompositionLocalOf<Provider> {
     error("Provider not defined.")
+}
+
+/**
+ * [CompositionLocal] containing the [WindowSizeClass].
+ *
+ * This [CompositionLocal] is used to access the current [WindowSizeClass] within a composition.
+ * If no [WindowSizeClass] is found in the composition hierarchy, a default [WindowSizeClass]
+ * will be calculated based on the provided size.
+ *
+ * Usage:
+ *
+ * ```
+ * val windowSizeClass = LocalWindowSizeClass.current
+ * // Use the windowSizeClass value within the composition
+ * ```
+ * @optIn ExperimentalMaterial3WindowSizeClassApi
+ */
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+val LocalWindowSizeClass = staticCompositionLocalOf<WindowSizeClass> {
+    WindowSizeClass.calculateFromSize(DpSize(367.dp, 900.dp))
 }
 
 private const val MIN_LAUNCH_COUNT = 10
@@ -417,6 +442,7 @@ class MainActivity : ComponentActivity(), Provider {
         }
     }
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The app has started from scratch if savedInstanceState is null.
@@ -439,7 +465,11 @@ class MainActivity : ComponentActivity(), Provider {
         //manually handle decor.
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
-            CompositionLocalProvider(LocalsProvider provides this) {
+            val windowSizeClass = calculateWindowSizeClass(activity = this)
+            CompositionLocalProvider(
+                LocalsProvider provides this,
+                LocalWindowSizeClass provides windowSizeClass
+            ) {
                 Home(channel = channel)
             }
         }

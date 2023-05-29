@@ -9,29 +9,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.PhotoAlbum
 import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.NonRestartableComposable
@@ -56,8 +48,9 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.prime.gallery.core.NightMode
-import com.prime.gallery.core.compose.NavigationBarItem2
 import com.prime.gallery.core.compose.Placeholder
+import com.prime.gallery.core.compose.Route
+import com.prime.gallery.core.compose.Scaffold
 import com.prime.gallery.core.compose.current
 import com.prime.gallery.directory.local.Folders
 import com.prime.gallery.directory.local.FoldersViewModel
@@ -120,9 +113,10 @@ private const val PERMISSION_ROUTE = "_route_storage_permission"
  * The Storage Permission to ask for.
  */
 private val STORAGE_PERMISSION =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_IMAGES
-    else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        android.Manifest.permission.READ_MEDIA_IMAGES
+    else
+        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 
 /**
  * The permission screen.
@@ -135,22 +129,20 @@ private fun Permission() {
     // Once granted set different route like folders as start.
     // Navigate from here to there.
     val permission = rememberPermissionState(permission = STORAGE_PERMISSION) {
-        controller.graph.setStartDestination(Folders.route)
+        // FixMe: Navigate to the real route.
+        controller.graph.setStartDestination(Settings.route)
+        controller.navigate(Settings.direction())
     }
-    Surface(
-        color = Material.colorScheme.background, modifier = Modifier.fillMaxSize()
+    Placeholder(
+        iconResId = R.raw.lt_permission,
+        title = stringResource(R.string.storage_permission),
+        message = stringResource(R.string.storage_permission_msg),
     ) {
-        Placeholder(
-            iconResId = R.raw.lt_permission,
-            title = stringResource(R.string.storage_permission),
-            message = stringResource(R.string.storage_permission_msg),
+        OutlinedButton(
+            onClick = { permission.launchPermissionRequest() },
+            modifier = Modifier.size(width = 200.dp, height = 46.dp)
         ) {
-            OutlinedButton(
-                onClick = { permission.launchPermissionRequest() },
-                modifier = Modifier.size(width = 200.dp, height = 46.dp)
-            ) {
-                Text(text = "ALLOW")
-            }
+            Text(text = "ALLOW")
         }
     }
 }
@@ -189,7 +181,8 @@ private fun Material(
 @NonRestartableComposable
 @Composable
 private fun NavGraph(
-    controller: NavHostController, modifier: Modifier = Modifier
+    controller: NavHostController,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     // Load start destination based on if storage permission is set or not.
@@ -199,10 +192,13 @@ private fun NavGraph(
     }
     // In order to navigate and remove the need to pass controller below UI components.
     // pass controller as composition local.
-    CompositionLocalProvider(LocalNavController provides controller, content = {
-        // actual paragraph
-        Box(modifier) {
-            AnimatedNavHost(navController = controller,
+    CompositionLocalProvider(
+        LocalNavController provides controller,
+        content = {
+            // actual paragraph
+            AnimatedNavHost(
+                navController = controller,
+                modifier = modifier,
                 startDestination = startDestination, //
                 enterTransition = { EnterTransition },
                 exitTransition = { ExitTransition },
@@ -235,48 +231,10 @@ private fun NavGraph(
                         val viewModel = hiltViewModel<SettingsViewModel>()
                         Settings(viewModel = viewModel)
                     }
-                })
+                }
+            )
         }
-    })
-}
-
-@NonRestartableComposable
-@Composable
-private fun BottomBar(controller: NavHostController) {
-    val current by controller.currentBackStackEntryAsState()
-    BottomAppBar() {
-        Spacer(modifier = Modifier.weight(1f))
-        // Photos
-        NavigationBarItem2(title = "Timeline",
-            icon = Icons.Outlined.Image,
-            checked = current?.destination?.route == Images.route,
-            onRequestChange = {
-                /*TODO: Not Implemented yet.*/
-            })
-        // Folders
-        NavigationBarItem2(title = "Folders",
-            icon = Icons.Outlined.Folder,
-            checked = current?.destination?.route == Folders.route,
-            onRequestChange = {
-
-            })
-
-        // Albums
-        val provider = LocalsProvider.current
-        NavigationBarItem2(title = "Albums",
-            icon = Icons.Outlined.PhotoAlbum,
-            checked = false,
-            onRequestChange = {
-                provider.snack("The feature is currently not available.", "Dismiss")
-            })
-
-        //Settings screen
-        NavigationBarItem2(title = "Settings",
-            icon = Icons.Outlined.Tune,
-            checked = current?.destination?.route == Settings.route,
-            onRequestChange = { controller.navigate(Settings.direction()) })
-        Spacer(modifier = Modifier.weight(1f))
-    }
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -290,8 +248,8 @@ fun Home(channel: SnackbarHostState) {
 
     // current route.
     val current by navController.currentBackStackEntryAsState()
-    val hideNavUI = when (current?.destination?.route) {
-        Viewer.route, PERMISSION_ROUTE -> true
+    val hideNavigationBar = when (current?.destination?.route) {
+        Viewer.route, PERMISSION_ROUTE, Settings.route -> true
         else -> false
     }
     Material(darkTheme, dynamicColor) {
@@ -303,8 +261,7 @@ fun Home(channel: SnackbarHostState) {
         val colorSystemBars by preference(key = Gallery.COLOR_STATUS_BAR)
         val systemBarsColor =
             if (colorSystemBars) Material.colorScheme.primary else Color.Transparent
-
-
+        val hideStatusBar by preference(key = Gallery.HIDE_STATUS_BAR)
         if (!view.isInEditMode) {
             SideEffect {
                 val window = (view.context as Activity).window
@@ -313,13 +270,7 @@ fun Home(channel: SnackbarHostState) {
                 WindowCompat
                     .getInsetsController(window, view)
                     .isAppearanceLightStatusBars = !darkTheme && !colorSystemBars
-            }
-        }
-
-        val hideStatusBar by preference(key = Gallery.HIDE_STATUS_BAR)
-        if (!view.isInEditMode) {
-            SideEffect {
-                val window = (view.context as Activity).window
+                //
                 if (hideStatusBar)
                     WindowCompat.getInsetsController(window, view)
                         .hide(WindowInsetsCompat.Type.statusBars())
@@ -328,17 +279,58 @@ fun Home(channel: SnackbarHostState) {
                         .show(WindowInsetsCompat.Type.statusBars())
             }
         }
-
         //Place the content.
+        val vertical = LocalWindowSizeClass.current.widthSizeClass < WindowWidthSizeClass.Medium
+        val progress by LocalsProvider.current.inAppUpdateProgress
         Scaffold(
-            snackbarHost = { SnackbarHost(hostState = channel) },
-            content = { NavGraph(controller = navController, Modifier.padding(it)) },
-            bottomBar = {
-                if (hideNavUI) return@Scaffold
-                // else draw the bottom bar.
-                BottomBar(controller = navController)
-            },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            vertical = vertical,
+            channel = channel,
+            content = { NavGraph(controller = navController) },
+            progress = progress,
+            hideNavigationBar = hideNavigationBar,
+            tabs = {
+                // Timeline.
+                Route(
+                    title = "Timeline",
+                    icon = Icons.Outlined.Image,
+                    checked = current?.destination?.route == Images.route,
+                    onClick = {
+                        /*TODO: Not Implemented yet.*/
+                    },
+                    vertical = vertical,
+                )
+                // Folders
+                Route(
+                    title = "Folders",
+                    icon = Icons.Outlined.Folder,
+                    checked = current?.destination?.route == Folders.route,
+                    onClick = {
+                        /*TODO: Not Implemented yet.*/
+                    },
+                    vertical = vertical,
+                )
+
+                // Albums
+                val provider = LocalsProvider.current
+                Route(
+                    title = "Albums",
+                    icon = Icons.Outlined.PhotoAlbum,
+                    checked = false,
+                    onClick = {
+                        provider.snack("The feature is currently not available.", "Dismiss")
+                    },
+                    vertical = vertical
+                )
+
+                //Settings screen
+                Route(
+                    title = "Settings",
+                    icon = Icons.Outlined.Tune,
+                    checked = current?.destination?.route == Settings.route,
+                    onClick = { navController.navigate(Settings.direction()) },
+                    vertical = vertical
+                )
+            }
         )
     }
 }

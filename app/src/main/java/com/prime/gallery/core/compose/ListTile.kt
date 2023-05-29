@@ -200,7 +200,8 @@ fun ListTile(
             trailingPlaceable?.placeRelative(x, y)
             // overline
             x = if (leadingPlaceable == null) 0 else (leadingPlaceable.width + leadingPaddingPx)
-            y = 0
+            y = if (topAlign) 0 else (height / 2 - ((overlinePlaceable?.height
+                ?: 0) + headingPlaceable.height + (subtitlePlaceable?.height ?: 0)) / 2)
             overlinePlaceable?.placeRelative(x, y)
             y += overlinePlaceable?.height ?: 0
             headingPlaceable.placeRelative(x, y)
