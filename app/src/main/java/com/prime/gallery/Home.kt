@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,6 +46,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -229,7 +231,7 @@ private fun NavGraph(
                     }
 
                     //Settings
-                    composable("Settings.route") {
+                    composable(Settings.route) {
                         val viewModel = hiltViewModel<SettingsViewModel>()
                         Settings(viewModel = viewModel)
                     }
@@ -272,7 +274,7 @@ private fun BottomBar(controller: NavHostController) {
         NavigationBarItem2(title = "Settings",
             icon = Icons.Outlined.Tune,
             checked = current?.destination?.route == Settings.route,
-            onRequestChange = {})
+            onRequestChange = { controller.navigate(Settings.direction()) })
         Spacer(modifier = Modifier.weight(1f))
     }
 }
@@ -294,14 +296,36 @@ fun Home(channel: SnackbarHostState) {
     }
     Material(darkTheme, dynamicColor) {
         // handle the color of navBars.
+        // handle the color of navBars.
         val view = LocalView.current
+
+        // Observe if the user wants to color the SystemBars
+        val colorSystemBars by preference(key = Gallery.COLOR_STATUS_BAR)
+        val systemBarsColor =
+            if (colorSystemBars) Material.colorScheme.primary else Color.Transparent
+
+
         if (!view.isInEditMode) {
             SideEffect {
                 val window = (view.context as Activity).window
-                window.navigationBarColor = Color.Transparent.toArgb()
-                window.statusBarColor = Color.Transparent.toArgb()
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-                    darkTheme
+                window.navigationBarColor = systemBarsColor.toArgb()
+                window.statusBarColor = systemBarsColor.toArgb()
+                WindowCompat
+                    .getInsetsController(window, view)
+                    .isAppearanceLightStatusBars = !darkTheme && !colorSystemBars
+            }
+        }
+
+        val hideStatusBar by preference(key = Gallery.HIDE_STATUS_BAR)
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                if (hideStatusBar)
+                    WindowCompat.getInsetsController(window, view)
+                        .hide(WindowInsetsCompat.Type.statusBars())
+                else
+                    WindowCompat.getInsetsController(window, view)
+                        .show(WindowInsetsCompat.Type.statusBars())
             }
         }
 
@@ -313,7 +337,8 @@ fun Home(channel: SnackbarHostState) {
                 if (hideNavUI) return@Scaffold
                 // else draw the bottom bar.
                 BottomBar(controller = navController)
-            }
+            },
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
         )
     }
 }
