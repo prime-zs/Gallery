@@ -62,6 +62,12 @@ class Gallery : Application() {
         val KEY_LAUNCH_COUNTER = intPreferenceKey(TAG + "_launch_counter")
 
         /**
+         * The preference key for controlling the usage of the trash can feature.This key represents
+         * a boolean preference that determines whether the trash can is enabled or not.
+         */
+        val KEY_USE_TRASH_CAN = booleanPreferenceKey(TAG + "_use_trash_can", true)
+
+        /**
          * The link to PlayStore Market.
          */
         const val GOOGLE_STORE = "market://details?id=" + BuildConfig.APPLICATION_ID
