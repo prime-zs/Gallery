@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.compose.material3.SnackbarHostState
 import com.google.firebase.FirebaseApp
 import com.prime.gallery.core.NightMode
+import com.prime.gallery.core.api.MediaProvider
 import com.primex.preferences.*
 import dagger.Module
 import dagger.Provides
@@ -25,6 +26,10 @@ object Singleton {
     @Singleton
     fun preferences(@ApplicationContext context: Context) =
         Preferences(context, "shared_preferences.db")
+
+    @Provides
+    @Singleton
+    fun mediaProvider(@ApplicationContext context: Context) = MediaProvider(context.contentResolver)
 }
 
 @Module

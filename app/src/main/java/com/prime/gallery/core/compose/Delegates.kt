@@ -1,5 +1,6 @@
 package com.prime.gallery.core.compose
 
+import androidx.compose.animation.core.AnimationConstants
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +15,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -23,6 +25,8 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.PlatformParagraphStyle
@@ -50,6 +54,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.primex.core.Text
 
 /**
@@ -362,5 +368,29 @@ inline fun Button(
             )
             Text(text = label)
         }
+    )
+}
+
+@Composable
+inline fun Image(
+    data: Any?,
+    modifier: Modifier = Modifier,
+    error: Painter? = null,
+    contentScale: ContentScale = ContentScale.Crop,
+    alignment: Alignment = Alignment.Center,
+    fadeMills: Int = AnimationConstants.DefaultDurationMillis,
+) {
+    val context = LocalContext.current
+    val request = remember(data) {
+        ImageRequest.Builder(context).data(data).crossfade(fadeMills).build()
+    }
+
+    AsyncImage(
+        model = request,
+        contentDescription = null,
+        error = error,
+        modifier = modifier,
+        contentScale = contentScale,
+        alignment = alignment,
     )
 }

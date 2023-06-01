@@ -119,4 +119,3 @@ object ContentElevation {
  * The default alpha value of a divider is 0.12f.
  */
 private const val Divider = 0.12f
-

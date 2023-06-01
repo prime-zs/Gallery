@@ -475,7 +475,6 @@ private class AndroidMediaProvider(
     private val resolver: ContentResolver
 ) : MediaProvider {
     override fun register(uri: Uri, onChanged: () -> Unit) = resolver.register(uri, onChanged)
-
     override fun observe(uri: Uri): Flow<Boolean> = resolver.observe(uri)
 
     override suspend fun getMediaFiles(
@@ -490,7 +489,7 @@ private class AndroidMediaProvider(
         // FixMe - Maybe allow user somehow pass mediaType as parameter.
         //language = SQL
         val selection =
-            "${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.MEDIA_TYPE_VIDEO}" +
+            "${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO}" +
                     if (parent != null) " AND ${MediaProvider.COLUMN_PARENT == parent}" else "" +
                             if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
         // Return the Files.
@@ -522,10 +521,16 @@ private class AndroidMediaProvider(
         offset: Int,
         limit: Int
     ): List<Folder> {
+        // compose selection.
+        // FixMe - Maybe allow user somehow pass mediaType as parameter.
+        //language = SQL
+        val selection =
+            "${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO}" +
+                    if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
         return resolver.query2(
             MediaProvider.EXTERNAL_CONTENT_URI,
-            arrayOf(MediaStore.Images.Media.DATA),
-            selection = if (filter == null) DUMMY_SELECTION else "${MediaProvider.COLUMN_PATH} LIKE ?",
+            arrayOf(MediaProvider.COLUMN_PATH),
+            selection = selection,
             if (filter != null) arrayOf("%$filter%") else null,
             order = MediaProvider.COLUMN_DATE_MODIFIED,
             ascending = ascending

@@ -19,8 +19,7 @@ import javax.inject.Inject
  */
 @ActivityRetainedScoped
 class Repository @Inject constructor(
-    private val provider: MediaProvider,
-    private val resolver: ContentResolver,
+    private val provider: MediaProvider
 ) {
     /**
      * Register an observer class that gets callbacks when data identified by a given content URI
