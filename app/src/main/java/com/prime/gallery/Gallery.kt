@@ -3,6 +3,14 @@ package com.prime.gallery
 import android.app.Application
 import android.content.Context
 import androidx.compose.material3.SnackbarHostState
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.GifDecoder
+import coil.decode.SvgDecoder
+import coil.decode.VideoFrameDecoder
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
 import com.google.firebase.FirebaseApp
 import com.prime.gallery.core.NightMode
 import com.prime.gallery.core.api.MediaProvider
@@ -41,7 +49,7 @@ object Activity {
 }
 
 @HiltAndroidApp
-class Gallery : Application() {
+class Gallery : Application(), ImageLoaderFactory {
 
     companion object {
 
@@ -95,5 +103,28 @@ class Gallery : Application() {
         super.onCreate()
         // initialize firebase
         FirebaseApp.initializeApp(this)
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .components {
+                add(VideoFrameDecoder.Factory())
+                add(SvgDecoder.Factory())
+                add(GifDecoder.Factory())
+            }
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .strongReferencesEnabled(true)
+                    .build()
+            }
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache/coil"))
+                    .maxSizePercent(0.02)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .build()
     }
 }

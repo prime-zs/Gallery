@@ -151,8 +151,8 @@ private fun <T : Any> Toolbar(
 ) {
     //shown only if list meta is simple.
     val title = stringResource(value = resolver.meta?.title) ?: ""
-    androidx.compose.material3.CenterAlignedTopAppBar(
-        title = { Text(text = title, style = Material.typography.bodyLarge) },
+    androidx.compose.material3.TopAppBar(
+        title = { Text(text = title) },
         modifier = modifier,
         navigationIcon = {
             val navigator = LocalNavController.current
