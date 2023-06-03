@@ -248,10 +248,14 @@ fun Home(channel: SnackbarHostState) {
 
     // current route.
     val current by navController.currentBackStackEntryAsState()
-    val hideNavigationBar = when (current?.destination?.route) {
-        Viewer.route, PERMISSION_ROUTE, Settings.route -> true
+    val hideNavigationBar = when {
+        current?.destination?.route == Viewer.route -> true
+        current?.destination?.route == PERMISSION_ROUTE -> true
+        current?.destination?.route == Settings.route -> true
+        current?.destination?.route == Images.route && current?.arguments?.getString(Images.PARAM_TYPE) == Images.GET_FROM_FOLDER -> true
         else -> false
     }
+
     Material(darkTheme, dynamicColor) {
         // handle the color of navBars.
         // handle the color of navBars.
@@ -295,7 +299,7 @@ fun Home(channel: SnackbarHostState) {
                     icon = Icons.Outlined.Image,
                     checked = current?.destination?.route == Images.route,
                     onClick = {
-                        /*TODO: Not Implemented yet.*/
+                        navController.navigate(Images.direction(Images.GET_EVERY))
                     },
                     vertical = vertical,
                 )
@@ -309,7 +313,6 @@ fun Home(channel: SnackbarHostState) {
                     },
                     vertical = vertical,
                 )
-
                 // Albums
                 val provider = LocalsProvider.current
                 Route(
@@ -321,7 +324,6 @@ fun Home(channel: SnackbarHostState) {
                     },
                     vertical = vertical
                 )
-
                 //Settings screen
                 Route(
                     title = "Settings",

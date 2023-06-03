@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +32,7 @@ import com.prime.gallery.core.api.Folder
 import com.prime.gallery.core.api.MediaProvider
 import com.prime.gallery.core.compose.Image
 import com.prime.gallery.core.compose.Text
+import com.prime.gallery.core.compose.rememberVectorPainter
 import com.prime.gallery.directory.Action
 import com.prime.gallery.directory.Directory
 import com.prime.gallery.directory.DirectoryViewModel
@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.random.Random.Default
 
 private const val TAG = "FoldersViewModel"
 
@@ -70,6 +69,7 @@ typealias Folders = FoldersViewModel.Companion
 private val Folder.firstTitleChar
     inline get() = name.uppercase()[0].toString()
 
+//FixMe: Move the ViewModel Impl to separate package.
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
     handle: SavedStateHandle,
@@ -116,6 +116,7 @@ class FoldersViewModel @Inject constructor(
         filter(ascending = false)
     }
 
+
     override fun toggleViewType() {
         // Note: Currently, only a single viewType is supported. However, future updates may
         // introduce support for multiple view types.
@@ -140,10 +141,9 @@ class FoldersViewModel @Inject constructor(
                 }
             }.catch {  // catch any exception.
                 // any exception.
-                toaster.showSnackbar(
-                    "Some unknown error occurred!. ${it.message}",
-                    "Dismiss"
-                )
+                // FixMe - Make an advanced version of Toaster.
+                // FixMe - Make Toaster able to submit the error to support version; if possible.
+                toaster.showSnackbar("Some unknown error occurred!. ${it.message}")
             }
 }
 
@@ -170,6 +170,7 @@ fun Folder(
             .wrapContentHeight(),  // wrap the height of the content
     ) {
         val x = if (kotlin.random.Random.nextBoolean()) 2 * 0.04f else 0.04f
+        // The representation image
         Image(
             data = "file://${value.artwork}",
             modifier = Modifier
@@ -181,10 +182,11 @@ fun Folder(
                 ),
             error = rememberVectorPainter(
                 image = ImageVector.vectorResource(id = R.drawable.ic_error_24),
+                tintColor = Material.colorScheme.onSurface.copy(0.76f),
             ),
         )
 
-        // title
+        // Label
         Text(
             text = value.name,
             maxLines = 2,
@@ -213,7 +215,7 @@ fun Folders(viewModel: FoldersViewModel) {
             modifier = Modifier
                 .animateItemPlacement()
                 .clickable {
-                    //navigator.navigate(Photos.direction(Photos.GET_FROM_FOLDER, folder.path))
+                    navigator.navigate(Images.direction(Images.GET_FROM_FOLDER, folder.path))
                 }
         )
     }

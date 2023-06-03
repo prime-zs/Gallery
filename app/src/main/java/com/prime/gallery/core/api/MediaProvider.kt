@@ -159,6 +159,7 @@ fun ContentResolver.observe(uri: Uri) = callbackFlow {
  * @property dateModified The last modified date of the file.
  * @property size The size of the file in bytes.
  */
+// FixMe: Rename File to Media and fill it with common properties.
 @Stable
 sealed interface File {
 
@@ -471,57 +472,18 @@ private val Cursor.toVideo: Video
         )
     }
 
+
+// FixMe: Move impl to new package.
 private class AndroidMediaProvider(
     private val resolver: ContentResolver
 ) : MediaProvider {
     override fun register(uri: Uri, onChanged: () -> Unit) = resolver.register(uri, onChanged)
     override fun observe(uri: Uri): Flow<Boolean> = resolver.observe(uri)
 
-    override suspend fun getMediaFiles(
-        filter: String?,
-        order: String,
-        ascending: Boolean,
-        parent: String?,
-        offset: Int,
-        limit: Int
-    ): List<File> {
-        // Compose selection.
-        // FixMe - Maybe allow user somehow pass mediaType as parameter.
-        //language = SQL
-        val selection =
-            "${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO}" +
-                    if (parent != null) " AND ${MediaProvider.COLUMN_PARENT == parent}" else "" +
-                            if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
-        // Return the Files.
-        return resolver.query2(
-            uri = MediaProvider.EXTERNAL_CONTENT_URI,
-            projection = MEDIA_PROJECTION,
-            ascending = ascending,
-            selection = selection,
-            args = if (filter != null) arrayOf("%$filter%") else null,
-            order = order,
-            offset = offset,
-            limit = limit,
-            transform = { c ->
-                List(c.count) {
-                    c.moveToPosition(it);
-                    val type = c.getInt(12)
-                    if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
-                        c.toVideo
-                    else
-                        c.toImage
-                }
-            },
-        )
-    }
-
     override suspend fun getFolders(
-        filter: String?,
-        ascending: Boolean,
-        offset: Int,
-        limit: Int
+        filter: String?, ascending: Boolean, offset: Int, limit: Int
     ): List<Folder> {
-        // compose selection.
+        // Compose selection.
         // FixMe - Maybe allow user somehow pass mediaType as parameter.
         //language = SQL
         val selection =
@@ -552,5 +514,51 @@ private class AndroidMediaProvider(
             // val toIndex = if (offset + limit > l.size -1 ) TODO()
             result
         }
+    }
+
+    override suspend fun getMediaFiles(
+        filter: String?,
+        order: String,
+        ascending: Boolean,
+        parent: String?,
+        offset: Int,
+        limit: Int
+    ): List<File> {
+        // Compose selection.
+        // FixMe - Maybe allow user somehow pass mediaType as parameter.
+        //language = SQL
+        val selection =  // Select only the mediaTypes of Image and Video
+            "(${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO})" +
+                    // If parent is non-null return media from that particular directory only.
+                    if (parent != null) " AND ${MediaProvider.COLUMN_PATH} LIKE ?" else "" +
+                            // Add filter to selection if filter param is non-null.
+                            if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
+        // Return the Files.
+        return resolver.query2(
+            uri = MediaProvider.EXTERNAL_CONTENT_URI,
+            projection = MEDIA_PROJECTION,
+            ascending = ascending,
+            selection = selection,
+            // provide args if available.
+            args = when {
+                filter != null && parent != null -> arrayOf("$parent%", "%$filter%")
+                filter == null && parent != null -> arrayOf("$parent%")
+                filter != null && parent == null -> arrayOf("%$filter%")
+                else -> null // when both are null
+            },
+            order = order,
+            offset = offset,
+            limit = limit,
+            transform = { c ->
+                List(c.count) {
+                    c.moveToPosition(it);
+                    val type = c.getInt(12)
+                    if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
+                        c.toVideo
+                    else
+                        c.toImage
+                }
+            },
+        )
     }
 }

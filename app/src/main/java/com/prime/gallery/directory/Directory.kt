@@ -6,9 +6,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -23,8 +24,6 @@ import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.RadioButtonChecked
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.ReplyAll
 import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Divider
@@ -39,8 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.State
@@ -63,6 +60,7 @@ import com.prime.gallery.core.compose.stringResource
 import com.primex.core.Text
 import com.primex.core.drawHorizontalDivider
 import com.primex.core.get
+import com.primex.core.plus
 import com.primex.core.raw
 import com.primex.core.rememberState
 import com.primex.core.stringResource
@@ -256,7 +254,6 @@ private fun <T : Any> Toolbar(
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
     )
 }
 
@@ -299,7 +296,7 @@ private fun <T : Any> ActionBar(
             val count = resolver.selected.size
             Text(text = "$count selected", style = Material.typography.bodyLarge)
         },
-        modifier = modifier.padding(top = ContentPadding.medium),
+        modifier = modifier,
         // here the navigation icon is the clear button.
         // clear selection if selected > 0
         navigationIcon = {
@@ -352,7 +349,6 @@ private fun <T : Any> ActionBar(
                 }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary)
     )
 }
 
@@ -627,7 +623,12 @@ fun <T : Any> Directory(
         topBar = {
             TopAppBar(
                 resolver = viewModel,
-                onAction = onAction
+                onAction = onAction,
+                modifier = Modifier.drawHorizontalDivider(
+                    color = MaterialTheme.colorScheme.outline,
+                    thickness = 2.dp,
+                    indent = PaddingValues(horizontal = ContentPadding.large)
+                )
             )
         },
         // mainAction
@@ -650,11 +651,12 @@ fun <T : Any> Directory(
             }
         },
         content = {
+            val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
             List(
                 resolver = viewModel,
                 cells = cells,
-                modifier = Modifier.padding(it),
-                contentPadding = contentPadding,
+                modifier = Modifier.padding(),
+                contentPadding = it + navBarPadding,
                 itemContent = itemContent,
                 key = key,
                 onAction = onAction

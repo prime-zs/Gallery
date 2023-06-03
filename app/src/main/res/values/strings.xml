@@ -32,8 +32,8 @@
        We hope you\'re enjoying our app! Your opinion matters to us, and we\'d love to hear your thoughts on how we can make it even better. If you have a moment, please leave us some feedback in the app store. Your feedback will help us continue to improve our app and provide the best experience possible. Thank you for your support!
     </string>
 
-    <string name = "coming_soon">Coming Soon</string>
-    <string name = "coming_soon_msg">
+    <string name="coming_soon">Coming Soon</string>
+    <string name="coming_soon_msg">
         We\'re sorry, this feature is not available yet. We\'re working hard to add it in a future
         update. Thank you for your patience and understanding.
     </string>

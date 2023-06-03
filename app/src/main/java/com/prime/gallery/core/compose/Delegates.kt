@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.RenderVectorGroup
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -394,3 +397,27 @@ inline fun Image(
         alignment = alignment,
     )
 }
+
+
+@Composable
+inline fun rememberVectorPainter(
+    image: ImageVector,
+    defaultWidth: Dp = image.defaultWidth,
+    defaultHeight: Dp = image.defaultHeight,
+    viewportWidth: Float = image.viewportWidth,
+    viewportHeight: Float = image.viewportHeight,
+    name: String = image.name,
+    tintColor: Color = image.tintColor,
+    tintBlendMode: BlendMode = image.tintBlendMode,
+    autoMirror: Boolean = image.autoMirror,
+) = rememberVectorPainter(
+    defaultWidth = defaultWidth,
+    defaultHeight = defaultHeight,
+    viewportWidth = viewportWidth,
+    viewportHeight = viewportHeight,
+    name = name,
+    tintColor = tintColor,
+    tintBlendMode = tintBlendMode,
+    autoMirror = autoMirror,
+    content = { _, _ -> RenderVectorGroup(group = image.root) }
+)
