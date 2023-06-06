@@ -3,7 +3,6 @@ package com.prime.gallery.directory.local
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -12,8 +11,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
@@ -24,26 +21,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.BaselineShift
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.SavedStateHandle
@@ -56,7 +44,7 @@ import com.prime.gallery.R
 import com.prime.gallery.core.Anim
 import com.prime.gallery.core.ContentPadding
 import com.prime.gallery.core.Repository
-import com.prime.gallery.core.api.File
+import com.prime.gallery.core.api.Media
 import com.prime.gallery.core.api.MediaProvider
 import com.prime.gallery.core.compose.rememberVectorPainter
 import com.prime.gallery.core.compose.withSpanStyle
@@ -88,7 +76,7 @@ private const val TAG = "PhotosViewModel"
  *
  * @return The first character of the file name as an uppercase String.
  */
-private val File.firstTitleChar
+private val Media.firstTitleChar
     inline get() = name.uppercase()[0].toString()
 
 typealias Images = ImagesViewModel.Companion
@@ -102,7 +90,7 @@ class ImagesViewModel @Inject constructor(
     handle: SavedStateHandle,
     private val toaster: SnackbarHostState,
     private val repository: Repository,
-) : DirectoryViewModel<File>(handle) {
+) : DirectoryViewModel<Media>(handle) {
 
     companion object {
 
@@ -236,7 +224,7 @@ class ImagesViewModel @Inject constructor(
         }
     }
 
-    override val data: Flow<Mapped<File>> =
+    override val data: Flow<Mapped<Media>> =
         repository.observe(MediaProvider.EXTERNAL_CONTENT_URI) // observe for changes.
             .combine(filter) { f1, f2 -> f2 } // combine with flow
             .map { (order, query, ascending) -> // map
@@ -322,7 +310,7 @@ fun Images(viewModel: ImagesViewModel) {
 @Composable
 @NonRestartableComposable
 private fun Media(
-    value: File,
+    value: Media,
     checked: Boolean,
     modifier: Modifier = Modifier
 ) {

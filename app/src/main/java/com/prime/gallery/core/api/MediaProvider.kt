@@ -8,8 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.compose.runtime.Stable
-import com.prime.gallery.core.api.File.Image
-import com.prime.gallery.core.api.File.Video
+import com.prime.gallery.core.api.Media.Image
+import com.prime.gallery.core.api.Media.Video
 import com.prime.gallery.core.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext as using
 private const val TAG = "LocalMediaProvider"
 
 private const val DUMMY_SELECTION = "${MediaStore.Audio.Media._ID} != 0"
-
 
 /**
  * An advanced version of [ContentResolver.query] with additional features.
@@ -147,43 +146,44 @@ fun ContentResolver.observe(uri: Uri) = callbackFlow {
 }
 
 /**
- * Represents a file retrieved from the media store.
+ * Represents a media file.
  *
- * @property id The unique ID for the file.
- * @property name The display name of the file.
- * @property type The media type of the file. Possible values are audio, video, image, document, playlist, or subtitle.
- * @property mimeType The MIME type of the file.
- * @property parent The index of the parent directory of the file.
- * @property path Absolute filesystem path to the file on disk. Note that this field may be read-only for apps targeting Android 11 and higher.
- * @property dateAdded The time the file was first added.
- * @property dateModified The last modified date of the file.
- * @property size The size of the file in bytes.
+ * This sealed interface defines the common properties that can be associated with a media file.
+ * Implementing classes can provide specific implementations based on the type of media file.
+ *
+ * @property id The ID of the media file.
+ * @property name The name of the media file.
+ * @property mimeType The MIME type of the media file.
+ * @property parent The parent directory of the media file.
+ * @property path The path of the media file.
+ * @property dateAdded The date when the media file was added.
+ * @property dateModified The date when the media file was last modified.
+ * @property size The size of the media file in bytes.
+ * @property dateTaken The date when the media was taken (applicable for photos).
+ * @property orientation The orientation of the media file.
+ * @property height The height of the media file (applicable for photos).
+ * @property width The width of the media file (applicable for photos).
  */
-// FixMe: Rename File to Media and fill it with common properties.
 @Stable
-sealed interface File {
-
+sealed interface Media {
     val id: Long
     val name: String
-    val type: Int
     val mimeType: String
     val parent: String
     val path: String
     val dateAdded: Long
     val dateModified: Long
     val size: Int
+    val dateTaken: Long
+    val orientation: Int
+    val height: Int
+    val width: Int
 
-    /**
-     * Represents an image file retrieved from the media store.
-     *
-     * @property dateTaken The time the image was taken.
-     * @property orientation The orientation of the image.
-     * @property height The height of the image in pixels.
-     * @property width The width of the image in pixels.
-     * @property latitude The latitude coordinate of the image location. Default is 0.0f.
-     * @property longitude The longitude coordinate of the image location. Default is 0.0f.
-     */
-    @Stable
+    // TODO: Maybe include in future version the necessary permission.
+    val latitude: Float get() = 0.0f
+    val longitude: Float get() = 0.0f
+
+
     data class Image(
         override val id: Long,
         override val name: String,
@@ -193,29 +193,12 @@ sealed interface File {
         override val dateAdded: Long,
         override val dateModified: Long,
         override val size: Int,
-        @JvmField val dateTaken: Long,
-        @JvmField val orientation: Int,
-        @JvmField val height: Int,
-        @JvmField val width: Int,
-        // FixMe: Maybe include in future version the necessary permission.
-        @JvmField val latitude: Float = 0.0f,
-        @JvmField val longitude: Float = 0.0f,
-    ) : File {
-        override val type: Int = MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
-    }
+        override val dateTaken: Long,
+        override val orientation: Int,
+        override val height: Int,
+        override val width: Int
+    ) : Media
 
-    /**
-     * Represents a video file retrieved from the media store.
-     *
-     * @property bookmark The position within the video item at which playback should be resumed.
-     * @property dateTaken The time the video was taken.
-     * @property orientation The orientation of the video.
-     * @property height The height of the video in pixels.
-     * @property width The width of the video in pixels.
-     * @property latitude The latitude coordinate of the video location. Default is 0.0f.
-     * @property longitude The longitude coordinate of the video location. Default is 0.0f.
-     */
-    @Stable
     data class Video(
         override val id: Long,
         override val name: String,
@@ -225,17 +208,11 @@ sealed interface File {
         override val dateAdded: Long,
         override val dateModified: Long,
         override val size: Int,
-        val bookmark: Int,
-        @JvmField val dateTaken: Long,
-        @JvmField val orientation: Int,
-        @JvmField val height: Int,
-        @JvmField val width: Int,
-        // FixMe: Maybe include in future version the necessary permission.
-        @JvmField val latitude: Float = 0.0f,
-        @JvmField val longitude: Float = 0.0f,
-    ) : File {
-        override val type: Int = MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
-    }
+        override val dateTaken: Long,
+        override val orientation: Int,
+        override val height: Int,
+        override val width: Int
+    ) : Media
 }
 
 /**
@@ -278,12 +255,6 @@ interface MediaProvider {
          * @see MediaStore.Files.FileColumns.MIME_TYPE
          */
         const val COLUMN_MIME_TYPE = MediaStore.Files.FileColumns.MIME_TYPE
-
-        /**
-         * Column name for the parent directory of a media file.
-         * @see MediaStore.Files.FileColumns.PARENT
-         */
-        const val COLUMN_PARENT = MediaStore.Files.FileColumns.PARENT
 
         /**
          * Column name for the file path of a media file.
@@ -339,6 +310,9 @@ interface MediaProvider {
          */
         val EXTERNAL_CONTENT_URI = MediaStore.Files.getContentUri("external")
 
+        /**
+         * Column name for the Media Type of the file.
+         */
         const val COLUMN_MEDIA_TYPE = MediaStore.Files.FileColumns.MEDIA_TYPE
 
         /**
@@ -390,14 +364,14 @@ interface MediaProvider {
      * [WRITE_EXTERNAL_STORAGE]) are not granted.
      * @throws NullPointerException if the returned cursor is null.
      */
-    suspend fun getMediaFiles(
+    suspend fun get(
         filter: String? = null,
         order: String = COLUMN_NAME,
         ascending: Boolean = true,
         parent: String? = null,
         offset: Int = 0,
         limit: Int = Int.MAX_VALUE
-    ): List<File>
+    ): List<Media>
 
 
     /**
@@ -417,23 +391,20 @@ interface MediaProvider {
     ): List<Folder>
 }
 
-
-private val MEDIA_PROJECTION =
-    arrayOf(
-        MediaProvider.COLUMN_ID, // 0
-        MediaProvider.COLUMN_NAME, // 1
-        MediaProvider.COLUMN_DATE_ADDED, // 2
-        MediaProvider.COLUMN_DATE_MODIFIED, // 3
-        MediaProvider.COLUMN_SIZE, // 4
-        MediaProvider.COLUMN_MIME_TYPE, // 5
-        MediaProvider.COLUMN_ORIENTATION, // 6
-        MediaProvider.COLUMN_HEIGHT,// 7
-        MediaProvider.COLUMN_WIDTH, // 8
-        MediaProvider.COLUMN_PATH, // 9
-        MediaProvider.COLUMN_DATE_TAKEN, // 10
-        MediaProvider.COLUMN_PARENT, // 11
-        MediaProvider.COLUMN_MEDIA_TYPE, // 12
-    )
+private val MEDIA_PROJECTION = arrayOf(
+    MediaProvider.COLUMN_ID, // 0
+    MediaProvider.COLUMN_NAME, // 1
+    MediaProvider.COLUMN_DATE_ADDED, // 2
+    MediaProvider.COLUMN_DATE_MODIFIED, // 3
+    MediaProvider.COLUMN_SIZE, // 4
+    MediaProvider.COLUMN_MIME_TYPE, // 5
+    MediaProvider.COLUMN_ORIENTATION, // 6
+    MediaProvider.COLUMN_HEIGHT,// 7
+    MediaProvider.COLUMN_WIDTH, // 8
+    MediaProvider.COLUMN_PATH, // 9
+    MediaProvider.COLUMN_DATE_TAKEN, // 10
+    MediaProvider.COLUMN_MEDIA_TYPE, // 11
+)
 
 private val Cursor.toImage: Image
     inline get() {
@@ -467,72 +438,25 @@ private val Cursor.toVideo: Video
             width = getInt(8),
             path = getString(9),
             dateTaken = getLong(10) * 1000,
-            parent = getString(11),
-            bookmark = 0,
+            parent = getString(11)
         )
     }
 
-
-// FixMe: Move impl to new package.
-private class AndroidMediaProvider(
+class AndroidMediaProvider(
     private val resolver: ContentResolver
 ) : MediaProvider {
     override fun register(uri: Uri, onChanged: () -> Unit) = resolver.register(uri, onChanged)
     override fun observe(uri: Uri): Flow<Boolean> = resolver.observe(uri)
 
-    override suspend fun getFolders(
-        filter: String?, ascending: Boolean, offset: Int, limit: Int
-    ): List<Folder> {
-        // Compose selection.
-        // FixMe - Maybe allow user somehow pass mediaType as parameter.
-        //language = SQL
-        val selection =
-            "${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO}" +
-                    if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
-        return resolver.query2(
-            MediaProvider.EXTERNAL_CONTENT_URI,
-            arrayOf(MediaProvider.COLUMN_PATH),
-            selection = selection,
-            if (filter != null) arrayOf("%$filter%") else null,
-            order = MediaProvider.COLUMN_DATE_MODIFIED,
-            ascending = ascending
-        ) { c ->
-            val result = List(c.count) {
-                c.moveToPosition(it);
-                val path = c.getString(0)
-                // filter out the individual folders of camera directory.
-                val parent = FileUtils.parent(path).let {
-                    if (FileUtils.name(it).startsWith("img", true))
-                        FileUtils.parent(it)
-                    else
-                        it
-                }
-                Folder(path, parent, 0, 0)
-            }.distinctBy { it.path }
-            // Fix. TODO: return limit to make consistent with others.
-            // val fromIndex = if (offset > l.size - 1) l.size -1 else offset
-            // val toIndex = if (offset + limit > l.size -1 ) TODO()
-            result
-        }
-    }
-
-    override suspend fun getMediaFiles(
-        filter: String?,
-        order: String,
-        ascending: Boolean,
-        parent: String?,
-        offset: Int,
-        limit: Int
-    ): List<File> {
+    override suspend fun get(
+        filter: String?, order: String, ascending: Boolean, parent: String?, offset: Int, limit: Int
+    ): List<Media> {
         // Compose selection.
         // FixMe - Maybe allow user somehow pass mediaType as parameter.
         //language = SQL
         val selection =  // Select only the mediaTypes of Image and Video
-            "(${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO})" +
-                    // If parent is non-null return media from that particular directory only.
-                    if (parent != null) " AND ${MediaProvider.COLUMN_PATH} LIKE ?" else "" +
-                            // Add filter to selection if filter param is non-null.
-                            if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
+            "(${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO})" + if (parent != null) " AND ${MediaProvider.COLUMN_PATH} LIKE ?" else "" + // If parent is non-null return media from that particular directory only
+                    if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else "" // Add filter to selection if filter param is non-null.
         // Return the Files.
         return resolver.query2(
             uri = MediaProvider.EXTERNAL_CONTENT_URI,
@@ -552,13 +476,44 @@ private class AndroidMediaProvider(
             transform = { c ->
                 List(c.count) {
                     c.moveToPosition(it);
-                    val type = c.getInt(12)
-                    if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
-                        c.toVideo
-                    else
-                        c.toImage
+                    val type = c.getInt(11)
+                    if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) c.toVideo
+                    else c.toImage
                 }
             },
         )
+    }
+
+    override suspend fun getFolders(
+        filter: String?, ascending: Boolean, offset: Int, limit: Int
+    ): List<Folder> {
+        // Compose selection.
+        // FixMe - Maybe allow user somehow pass mediaType as parameter.
+        //language = SQL
+        val selection =
+            "(${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_IMAGE} OR ${MediaProvider.COLUMN_MEDIA_TYPE} = ${MediaProvider.MEDIA_TYPE_VIDEO})" + if (filter != null) " AND ${MediaProvider.COLUMN_NAME} LIKE ?" else ""
+        return resolver.query2(
+            MediaProvider.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaProvider.COLUMN_PATH),
+            selection = selection,
+            if (filter != null) arrayOf("%$filter%") else null,
+            order = MediaProvider.COLUMN_DATE_MODIFIED,
+            ascending = ascending
+        ) { c ->
+            val result = List(c.count) {
+                c.moveToPosition(it);
+                val path = c.getString(0)
+                // filter out the individual folders of camera directory.
+                val parent = FileUtils.parent(path).let {
+                    if (FileUtils.name(it).startsWith("img", true)) FileUtils.parent(it)
+                    else it
+                }
+                Folder(path, parent, 0, 0)
+            }.distinctBy { it.path }
+            // Fix. TODO: return limit to make consistent with others.
+            // val fromIndex = if (offset > l.size - 1) l.size -1 else offset
+            // val toIndex = if (offset + limit > l.size -1 ) TODO()
+            result
+        }
     }
 }

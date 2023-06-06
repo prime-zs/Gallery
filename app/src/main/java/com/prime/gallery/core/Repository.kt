@@ -50,7 +50,7 @@ class Repository @Inject constructor(
         offset: Int = 0,
         parent: String? = null,
         limit: Int = Int.MAX_VALUE
-    ) = provider.getMediaFiles(query, order, ascending, parent, offset, limit)
+    ) = provider.get(query, order, ascending, parent, offset, limit)
 
     /**
      * @see MediaProvider.getFolders
